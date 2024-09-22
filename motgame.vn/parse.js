@@ -1,39 +1,18 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { abort } = require('process');
 const fs = require('fs').promises;
-
-const categories = [
-    'Liên quân huyền thoại',
-    'Liên quân mobile',
-    'Pubg mobile',
-    'Phỏng vấn',
-    'Chuyển nhượng',
-    'Tốc chiến',
-    'FIFA online 4',
-    'Free Fire',
-    'Highlight',
-    'Giải đấu',
-    'Game mobile',
-    'Valorant',
-    'Ngôi sao',
-    'Góc fandom',
-    'Livestream',
-];
-
 const prefixPaginate = '&s_cond=&BRSR=';
-
 const urlCategories = [
-    {
-        'url': 'https://motgame.vn/esports/toc-chien',
-        'slug': 'toc-chien',
+    // {
+    //     'url': 'https://motgame.vn/esports/toc-chien',
+    //     'slug': 'toc-chien',
 
-    },
-    {
-        'url': 'https://motgame.vn/esports/lien-quan-mobile',
-        'slug': 'lien-quan-mobile',
+    // },
+    // {
+    //     'url': 'https://motgame.vn/esports/lien-quan-mobile',
+    //     'slug': 'lien-quan-mobile',
 
-    },
+    // },
     {
         'url': 'https://motgame.vn/esports/lien-minh-huyen-thoai',
         'slug': 'lien-minh-huyen-thoai',
@@ -75,24 +54,35 @@ class Parse {
         console.log('Start crawl category URL: ' + url);
         let hasNextPage = true;
         let isFirstPage = true;
-        let page = 0;
+        let page = 20;
         let listNews = [];
         let newUrl = url ?? null;
 
         do {
 
             if (!isFirstPage) {
-                newUrl = `${url}${prefixPaginate}${page}${page}`;
+                let pagePaginate = null;
+                if (page < 10) {
+                    pagePaginate = `${page}${page}`;
+                } else {
+                    pagePaginate = page * 11;
+                }
+
+                newUrl = `${url}${prefixPaginate}${pagePaginate}`;
             } else {
                 isFirstPage = false;
             }
 
+
+
             const html = await this.getHtmlFromUrl(newUrl);
 
             if (html && slug) {
-                listNews = this.buildListNews(slug, html);
+                listNews = await this.buildListNews(slug, html);
             }
 
+            console.log(newUrl, 'newUrl');
+            console.log(listNews, 'listNews');
             if (listNews.length == 0) {
                 console.log(`Done crawl category url: ${newUrl}`);
 
@@ -142,7 +132,7 @@ class Parse {
         }
     }
 
-    buildListNews(categorySlug, html) {
+    async buildListNews(categorySlug, html) {
         const listItem = [];
         const $ = cheerio.load(html);
         const categoryCover = $('.motgame-category-cover .motgame-cat-content .article');
