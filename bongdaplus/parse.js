@@ -149,7 +149,7 @@ class Parse {
         try {
 
             const response = await axios.post(
-                'http://bongda.test/api/store-news-crawl',
+                'http://bongda.test/api/crawl/store',
                 data,
             )
 

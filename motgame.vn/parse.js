@@ -3,6 +3,11 @@ const cheerio = require('cheerio');
 const fs = require('fs').promises;
 const prefixPaginate = '&s_cond=&BRSR=';
 const urlCategories = [
+
+    // {
+    //     'url': 'https://motgame.vn/game-mobile',
+    //     'slug': 'game-mobile',
+    // },
     // {
     //     'url': 'https://motgame.vn/esports/toc-chien',
     //     'slug': 'toc-chien',
@@ -16,13 +21,12 @@ const urlCategories = [
     {
         'url': 'https://motgame.vn/esports/lien-minh-huyen-thoai',
         'slug': 'lien-minh-huyen-thoai',
-
     },
-    {
-        'url': 'https://motgame.vn/esports/valorant',
-        'slug': 'valorant',
+    // {
+    //     'url': 'https://motgame.vn/esports/valorant',
+    //     'slug': 'valorant',
+    // },
 
-    },
 ]
 
 class Parse {
@@ -54,7 +58,7 @@ class Parse {
         console.log('Start crawl category URL: ' + url);
         let hasNextPage = true;
         let isFirstPage = true;
-        let page = 20;
+        let page = 37; //1771
         let listNews = [];
         let newUrl = url ?? null;
 
@@ -72,7 +76,6 @@ class Parse {
             } else {
                 isFirstPage = false;
             }
-
 
 
             const html = await this.getHtmlFromUrl(newUrl);
@@ -118,18 +121,18 @@ class Parse {
     }
 
     async parseData(listItem) {
-        try {
-            if (listItem.length > 0) {
-                for (let index = 0; index < listItem.length; index++) {
-                    // await this.parseNewsDetailDataFromHtml();
+        // try {
+        if (listItem.length > 0) {
+            for (let index = 0; index < listItem.length; index++) {
+                // await this.parseNewsDetailDataFromHtml();
 
-                    await this.parseNewsDetailDataFromHtml(listItem[index]);
-                    await this.sleep(3000);
-                }
+                await this.parseNewsDetailDataFromHtml(listItem[index]);
+                await this.sleep(3000);
             }
-        } catch (error) {
-            console.log('Has error when crawl data from url');
         }
+        // } catch (error) {
+        //     console.log('Has error when parse data from url');
+        // }
     }
 
     async buildListNews(categorySlug, html) {
@@ -145,7 +148,7 @@ class Parse {
                 listItem.push({
                     url: link,
                     avatar: $(item).find('.article-image').find('img').attr('src'),
-                    category_slug: categorySlug
+                    category_slug: categorySlug,
                 });
             }
         });
@@ -157,7 +160,7 @@ class Parse {
                 listItem.push({
                     url: link,
                     avatar: $(item).find('.article-image').find('img').attr('src'),
-                    category_slug: categorySlug
+                    category_slug: categorySlug,
                 });
             }
         });
@@ -204,7 +207,7 @@ class Parse {
     async parseDataTags(html) {
         const $ = cheerio.load(html);
         let tags = [];
-        const hashTag = $('.hash-tags a');
+        const hashTag = $('.motgame-detail-hashtag .tag-link');
 
         hashTag.each((index) => {
             const item = hashTag[index];
@@ -223,7 +226,7 @@ class Parse {
             // console.log(JSON.stringify(data), 'data');
 
             const response = await axios.post(
-                'http://bongda.test/api/store-news-crawl',
+                'http://bongda.test/api/crawl/store',
                 data,
             )
 
@@ -242,6 +245,9 @@ class Parse {
     async parseDataNewsDetail(html, itemParse) {
         const $ = cheerio.load(html);
         const crawlInfo = this.parseSlugFromUrl(itemParse.url);
+        const htmlCategory = $('.article-meta.motgame-detail-meta a').attr('href');
+        const match = htmlCategory.match(/\/([^\/]+)$/)
+        const crawlCategory = match ? match[1] : null;
 
         return {
             'title': $('.article-detail-title').text().trim(),
@@ -257,6 +263,7 @@ class Parse {
             'crawl_id': crawlInfo.crawl_id,
             'crawl_url': itemParse.url,
             'category_slug': itemParse.category_slug,
+            'crawl_category': crawlCategory,
         }
     }
 
